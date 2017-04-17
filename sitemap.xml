@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://yoursite.com/2017/04/17/component-scan%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E4%B9%88/</loc>
+    
+    <lastmod>2017-04-17T13:11:31.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://yoursite.com/2017/04/15/Spring%E6%BA%90%E7%A0%81%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/</loc>
     
     <lastmod>2017-04-17T13:10:40.000Z</lastmod>
@@ -19,13 +26,6 @@
     <loc>http://yoursite.com/2017/04/16/2017%E9%98%85%E8%AF%BB%E4%B9%A6%E5%8D%95/</loc>
     
     <lastmod>2017-04-17T13:08:52.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://yoursite.com/2017/04/17/component-scan%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E4%B9%88/</loc>
-    
-    <lastmod>2017-04-17T13:06:15.000Z</lastmod>
     
   </url>
   
