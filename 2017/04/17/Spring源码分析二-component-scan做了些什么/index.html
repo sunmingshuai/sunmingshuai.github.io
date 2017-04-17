@@ -1,5 +1,171 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta name="baidu-site-verification" content="DYSF5GG91T"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="分享高质量Tomcat Spring SpringMCV AMQ 高并发相关技术博客"><meta name="keywords" content="Tomcat, Spring, AMQ"><title>Spring源码分析二:component-scan做了些什么 | FortyThieves</title><link rel="stylesheet" type="text/css" href="//fonts.css.network/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.3.0"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=1.3.0"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Spring源码分析二:component-scan做了些什么</h1><a id="logo" href="/.">FortyThieves</a><p class="description">总有一代人 背井离乡</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">Spring源码分析二:component-scan做了些什么</h1><div class="post-meta">Apr 17, 2017<span> | </span><span class="category"><a href="/categories/Spring源码分析/">Spring源码分析</a></span><script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><div class="post-content"><p><strong>写在前面<br></strong><br>看代码中途的过程中才开始写博客的 所以这篇博客假设你看过spring读取配置文件 解析标准<bean>标签的功能 以后会把这部分内容补上  </bean></p>
-</div><div class="tags"></div><div class="post-nav"><a href="/2017/04/16/Tomcat源码分析一-环境搭建/" class="pre">Tomcat源码分析一:环境搭建</a></div><div id="comments"><div id="uyan_frame"></div><script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2131150"></script></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="widget"><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="请输入关键字..."/></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Spring源码分析/">Spring源码分析</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat源码分析/">Tomcat源码分析</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/书单/">书单</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"></div></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/04/17/Spring源码分析二-component-scan做了些什么/">Spring源码分析二:component-scan做了些什么</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/Tomcat源码分析一-环境搭建/">Tomcat源码分析一:环境搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/阅读书单/">2017</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/Spring源码分析一-环境搭建/">Spring源码分析一:环境搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/hello-world/">Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/当我谈源码时-我谈些什么/">当我谈源码时,我谈些什么</a></li></ul></div></div></div></div><a id="totop" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.3.0" async></script><div id="footer"><div class="footer-info"><p><a href="/baidusitemap.xml">网站地图</a> |<a href="/atom.xml">订阅本站</a> |<span>联系博主：<a href="mailto:1106505519@qq.com" target="_blank" class="fa fa-email"> </a><a href="http://weibo.com/xiaoshuai1127" target="_blank" class="fa fa-weibo"></a><a href="https://github.com/sunmingshuai" target="_blank" class="fa fa-github"> </a></span></p><p><span> Copyright &copy;<a href="/." rel="nofollow">孙明帅</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span><span><a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> Theme </a>by<a rel="nofollow" target="_blank" href="https://github.com/chaooo"> Charles.</a></span></p></div></div></div><script type="text/javascript" src="/js/search.json.js?v=1.3.0"></script><script>var _hmt = _hmt || [];
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="baidu-site-verification" content="DYSF5GG91T"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="分享高质量Tomcat Spring SpringMCV AMQ 高并发相关技术博客"><meta name="keywords" content="Tomcat, Spring, AMQ"><title>component-scan做了些什么 | FortyThieves</title><link rel="stylesheet" type="text/css" href="//fonts.css.network/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.3.0"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=1.3.0"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">component-scan做了些什么</h1><a id="logo" href="/.">FortyThieves</a><p class="description">总有一代人 背井离乡</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">component-scan做了些什么</h1><div class="post-meta">Apr 17, 2017<span> | </span><span class="category"><a href="/categories/Spring源码分析/">Spring源码分析</a></span><script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><div class="post-content"><h2 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a><strong>写在前面</strong></h2><p>看spring代码中途的过程中才开始写博客的 所以这篇博客假设你看过spring读取配置文件 解析标准<code>&lt;bean&gt;</code>标签的功能 以后会把这部分内容补上</p>
+<h2 id="正文"><a href="#正文" class="headerlink" title="正文"></a><strong>正文</strong></h2><p>当遇到component-scan这样非标准/自定义的元素时 spring会通过spring.handlers文件中的对应关系<code>http\://www.springframework.org/schema/context=org.springframework.context.config.ContextNamespaceHandler</code> 通过<code>ContextNamespaceHandler</code>类<code>init()</code>自动注册一些解析器</p>
+<ul>
+<li>property-placeholder</li>
+<li>property-override</li>
+<li>annotation-config</li>
+<li>component-scan</li>
+<li>load-time-weaver</li>
+<li>spring-configured</li>
+<li>mbean-export</li>
+<li>mbean-server</li>
+</ul>
+<p>那我们看一下<code>&lt;context:component-scan&gt;</code>的解析器<code>ComponentScanBeanDefinitionParser</code>的源码 <code>ComponentScanBeanDefinitionParser</code>继承自<code>BeanDefinitionParser</code> spring解析<code>&lt;context:component-scan&gt;</code>的时候会调用<code>ComponentScanBeanDefinitionParser</code>的<code>parse()</code>函数</p>
+<pre><code>//element 看英文单词意思就知道代表的是完整的&lt;context:component-scan&gt;标签
+//parserContext 解析的上下文环境 能拿到一些诸如readerCotnext beanFactory的变量
+public BeanDefinition parse(Element element, ParserContext parserContext) {
+    //将base-package拆分成string数组的形式
+    String[] basePackages = StringUtils.tokenizeToStringArray(element.getAttribute(BASE_PACKAGE_ATTRIBUTE),
+            ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
+    // 根据配置或者默认配置生成扫描器ClassPathBeanDefinitionScanner
+    ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
+    //根据配置的scanner扫描包下面含有特殊注解标注的类 
+    //@Component @Named @ManagedBean (@Controller @Service @Repository)都会被注册 
+    Set&lt;BeanDefinitionHolder&gt; beanDefinitions = scanner.doScan(basePackages);
+    registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
+
+    return null;
+}
+</code></pre><p>看一下scanner的配置</p>
+<pre><code>    protected ClassPathBeanDefinitionScanner configureScanner(ParserContext parserContext, Element element) {
+    XmlReaderContext readerContext = parserContext.getReaderContext();
+
+    boolean useDefaultFilters = true;
+    if (element.hasAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE)) {
+        useDefaultFilters = Boolean.valueOf(element.getAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE));
+    }
+
+    // 生成scanner的时候 在其父类registerDefaultFilters()方法中加入了3个注解类型的过滤 分别是@Component 
+    // @ManagedBean @Named 意思也就是看类上面有没有这三个注解或者注解的元注解中含有这三个注解之一
+    // 这里虽然没有加入如@Service的注解 但看@Service的定义会发现@Service注解也被@Component给标注了
+    ClassPathBeanDefinitionScanner scanner = createScanner(readerContext, useDefaultFilters);
+    scanner.setResourceLoader(readerContext.getResourceLoader());
+    scanner.setEnvironment(parserContext.getDelegate().getEnvironment());
+    // 利用spring 启动的时候根据xml文件生成的BeanDefinition配置生成规则 
+    scanner.setBeanDefinitionDefaults(parserContext.getDelegate().getBeanDefinitionDefaults());
+    scanner.setAutowireCandidatePatterns(parserContext.getDelegate().getAutowireCandidatePatterns());
+
+    if (element.hasAttribute(RESOURCE_PATTERN_ATTRIBUTE)) {
+        scanner.setResourcePattern(element.getAttribute(RESOURCE_PATTERN_ATTRIBUTE));
+    }
+
+    try {
+        // 扫描注解定义的bean 需要定义一种beanName的生成规则  BeanNameGenerator
+        parseBeanNameGenerator(element, scanner);
+    }
+    catch (Exception ex) {
+        readerContext.error(ex.getMessage(), readerContext.extractSource(element), ex.getCause());
+    }
+
+    try {
+        parseScope(element, scanner);
+    }
+    catch (Exception ex) {
+        readerContext.error(ex.getMessage(), readerContext.extractSource(element), ex.getCause());
+    }
+    ／／ 根据xml配置设置includeFilter excludeFilter
+    // 类必须满足以下条件才会被注册 因为@Component等是被硬编码进去的 所以只有下面一种情况才会被注册了
+    // 不被excludeFilter匹配 并且被includeFilter匹配
+    parseTypeFilters(element, scanner, readerContext, parserContext);
+
+    return scanner;
+}
+</code></pre><p>下面在看一下真正的扫描过程</p>
+<pre><code>    protected Set&lt;BeanDefinitionHolder&gt; doScan(String... basePackages) {
+    Assert.notEmpty(basePackages, &quot;At least one base package must be specified&quot;);
+    Set&lt;BeanDefinitionHolder&gt; beanDefinitions = new LinkedHashSet&lt;BeanDefinitionHolder&gt;();
+    for (String basePackage : basePackages) {
+        //寻找被@Component或者@Named注解标注的类 或者 类的注解的元注解中含有这两个注解 例如常见的@Respsitory @Controller @Service
+        Set&lt;BeanDefinition&gt; candidates = findCandidateComponents(basePackage);
+        // 对于生成的AnnotatedBeanDefinition做一些转化工作 例如前面说到的应用默认的bd(BeanDefinition)配置 
+        // 处理@Primary @Lazy @DependsOn @Role注解等
+        // 转化成BeanDefinitionHolder对象
+        for (BeanDefinition candidate : candidates) {
+            ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
+            candidate.setScope(scopeMetadata.getScopeName());
+            String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
+            if (candidate instanceof AbstractBeanDefinition) {
+                postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
+            }
+            if (candidate instanceof AnnotatedBeanDefinition) {
+                AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
+            }
+            if (checkCandidate(beanName, candidate)) {
+                BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+                definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+                beanDefinitions.add(definitionHolder);
+                //注册到容器中
+                registerBeanDefinition(definitionHolder, this.registry);
+            }
+        }
+    }
+    return beanDefinitions;
+}
+</code></pre><p>看一下<code>findCandidateComponents</code>方法</p>
+<pre><code>public Set&lt;BeanDefinition&gt; findCandidateComponents(String basePackage) {
+    Set&lt;BeanDefinition&gt; candidates = new LinkedHashSet&lt;BeanDefinition&gt;();
+    try {
+        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
+                resolveBasePackage(basePackage) + &quot;/&quot; + this.resourcePattern;
+        //这里的resouces代表的就是路径下的各个类了
+        Resource[] resources = this.resourcePatternResolver.getResources(packageSearchPath);
+        boolean traceEnabled = logger.isTraceEnabled();
+        boolean debugEnabled = logger.isDebugEnabled();
+        for (Resource resource : resources) {
+            if (traceEnabled) {
+                logger.trace(&quot;Scanning &quot; + resource);
+            }
+            if (resource.isReadable()) {
+                try {
+// 这一步的作用就是能够不必加载class但能拿到class各种属性 并且这里也不能载入class(有很多事单例模式) 还没到那一步
+                    MetadataReader metadataReader = this.metadataReaderFactory.getMetadataReader(resource);
+// 根据includeFilters excludeFilters做匹配 因为篇幅的限制 不详谈 有兴趣的可以研究一下typeFilter的实现
+                    if (isCandidateComponent(metadataReader)) {
+                        ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
+                        sbd.setResource(resource);
+                        sbd.setSource(resource);
+                        if (isCandidateComponent(sbd)) {
+                            if (debugEnabled) {
+                                logger.debug(&quot;Identified candidate component class: &quot; + resource);
+                            }
+                            candidates.add(sbd);
+                        }
+                        else {
+                            if (debugEnabled) {
+                                logger.debug(&quot;Ignored because not a concrete top-level class: &quot; + resource);
+                            }
+                        }
+                    }
+                    else {
+                        if (traceEnabled) {
+                            logger.trace(&quot;Ignored because not matching any filter: &quot; + resource);
+                        }
+                    }
+                }
+                catch (Throwable ex) {
+                    throw new BeanDefinitionStoreException(
+                            &quot;Failed to read candidate component class: &quot; + resource, ex);
+                }
+            }
+            else {
+                if (traceEnabled) {
+                    logger.trace(&quot;Ignored because not readable: &quot; + resource);
+                }
+            }
+        }
+    }
+    catch (IOException ex) {
+        throw new BeanDefinitionStoreException(&quot;I/O failure during classpath scanning&quot;, ex);
+    }
+    return candidates;
+}
+</code></pre><p>总的来说 component-scan 做了什么事情就比较清晰了 下面做一下总结</p>
+<ul>
+<li>根据配置生成扫描类<code>ClassPathBeanDefinitionScanner</code> 扫描注册包下符合匹配规则的类</li>
+<li>扫描注册被@Controller @Service @Respsitory @Component等标注的类 因为@Controller @Service @Respsitory注解的元注解包含@Component 也就是说@Controller @Service @Respsitory本身被@Component标注 而匹配规则中有一条就是元注解包含@Component @Named 或者 @ManagedBean</li>
+</ul>
+<p>当然由于篇幅限制 并没有把所有的知识点都讲到 很多也是点到 那些细枝末节的东西需要读者有时间的时候自己跟着代码走一遍了 </p>
+</div><div class="tags"></div><div class="post-nav"><a href="/2017/04/16/Tomcat源码分析一-环境搭建/" class="pre">Tomcat源码分析一:环境搭建</a></div><div id="comments"><div id="uyan_frame"></div><script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2131150"></script></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="widget"><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="请输入关键字..."/></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Spring源码分析/">Spring源码分析</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat源码分析/">Tomcat源码分析</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/书单/">书单</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"></div></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/04/17/Spring源码分析二-component-scan做了些什么/">component-scan做了些什么</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/Tomcat源码分析一-环境搭建/">Tomcat源码分析一:环境搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/阅读书单/">2017(持续更新)</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/Spring源码分析一-环境搭建/">Spring源码分析一:环境搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/当我谈源码时-我谈些什么/">当我谈源码时,我谈些什么</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/14/hello-world/">Hello World</a></li></ul></div></div></div></div><a id="totop" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.3.0" async></script><div id="footer"><div class="footer-info"><p><a href="/baidusitemap.xml">网站地图</a> |<a href="/atom.xml">订阅本站</a> |<span>联系博主：<a href="mailto:1106505519@qq.com" target="_blank" class="fa fa-email"> </a><a href="http://weibo.com/xiaoshuai1127" target="_blank" class="fa fa-weibo"></a><a href="https://github.com/sunmingshuai" target="_blank" class="fa fa-github"> </a></span></p><p><span> Copyright &copy;<a href="/." rel="nofollow">孙明帅</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span><span><a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> Theme </a>by<a rel="nofollow" target="_blank" href="https://github.com/chaooo"> Charles.</a></span></p></div></div></div><script type="text/javascript" src="/js/search.json.js?v=1.3.0"></script><script>var _hmt = _hmt || [];
 (function() {
   var hm = document.createElement("script");
   hm.src = "//hm.baidu.com/hm.js?f60abd53b51d8a850b4eceb46491e049";
