@@ -25,7 +25,7 @@ public BeanDefinition parse(Element element, ParserContext parserContext) {
     //@Component @Named @ManagedBean (@Controller @Service @Repository @Configuration)都会被注册 
     Set&lt;BeanDefinitionHolder&gt; beanDefinitions = scanner.doScan(basePackages);
     // 注册组件以及一些我们常见的注解处理器(BPP) 如@Resouce @Autowired @Configuration @Value @Required @PostConstruct
-    //那么以后看到属性注入(IOC/DI)的时候 就不会奇怪 这些注解的处理是在哪里注册的了 在这里!
+    //那么以后看到属性注入(IOC/DI)的时候 就不会奇怪 这些注解的处理器(BPP)是在哪里注册的了 在这里!
     registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
     return null;
 }
