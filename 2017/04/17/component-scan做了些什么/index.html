@@ -4,7 +4,7 @@
 <h2 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a><strong>写在前面</strong></h2><p>看spring代码中途的过程中才开始写博客的 所以这篇博客假设你看过spring读取配置文件 解析标准<code>&lt;bean&gt;</code>标签的功能 以后会把这部分内容补上</p>
 <h2 id="本文目的"><a href="#本文目的" class="headerlink" title="本文目的"></a><strong>本文目的</strong></h2><p>本文主要解决一个问题就是component-scan会扫描注册哪些注解标注的类 被@Controller标注的类会被扫描注册吗?</p>
 <h2 id="正文"><a href="#正文" class="headerlink" title="正文"></a><strong>正文</strong></h2><p>当遇到component-scan这样非标准或者称为自定义的元素标签时 spring会通过spring.handlers文件中的对应关系<br><code>http\://www.springframework.org/schema/context=   
-org.springframework.context.config.ContextNamespaceHandler</code><br>找到<code>ContextNamespaceHandler</code> 通过<code>ContextNamespaceHandler</code>类<code>init()</code>自动注册一些解析器 下面列出了所有以context为命名空间的组合  例如常见的<code>&lt;context:componet-scan&gt;</code>元素 根据注册对应关系 知道其对应的解析器为<code>ComponentScanBeanDefinitionParser</code></p>
+org.springframework.context.config.ContextNamespaceHandler</code><br>找到<code>ContextNamespaceHandler</code> 通过<code>ContextNamespaceHandler</code>类<code>init()</code>方法自动注册一些解析器 下面列出了所有以context为命名空间的组合  例如常见的<code>&lt;context:componet-scan&gt;</code>元素 根据注册对应关系 知道其对应的解析器为<code>ComponentScanBeanDefinitionParser</code></p>
 <pre><code>public void init() {
     registerBeanDefinitionParser(&quot;property-placeholder&quot;, new PropertyPlaceholderBeanDefinitionParser());
     registerBeanDefinitionParser(&quot;property-override&quot;, new PropertyOverrideBeanDefinitionParser());
