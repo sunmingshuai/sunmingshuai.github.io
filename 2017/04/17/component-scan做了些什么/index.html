@@ -5,17 +5,19 @@
 <h2 id="本文目的"><a href="#本文目的" class="headerlink" title="本文目的"></a><strong>本文目的</strong></h2><p>本文主要解决一个问题就是component-scan会扫描注册哪些注解标注的类 被@Controller标注的类会被扫描注册吗?</p>
 <h2 id="正文"><a href="#正文" class="headerlink" title="正文"></a><strong>正文</strong></h2><p>当遇到component-scan这样非标准或者称为自定义的元素标签时 spring会通过spring.handlers文件中的对应关系<br><code>http\://www.springframework.org/schema/context=   
 org.springframework.context.config.ContextNamespaceHandler</code><br>找到<code>ContextNamespaceHandler</code> 通过<code>ContextNamespaceHandler</code>类<code>init()</code>自动注册一些解析器 下面列出了所有以context为命名空间的组合  例如常见的<code>&lt;context:componet-scan&gt;</code>元素 根据注册对应关系 知道其对应的解析器为<code>ComponentScanBeanDefinitionParser</code></p>
-<ul>
-<li>property-placeholder</li>
-<li>property-override</li>
-<li>annotation-config</li>
-<li>component-scan</li>
-<li>load-time-weaver</li>
-<li>spring-configured</li>
-<li>mbean-export</li>
-<li>mbean-server</li>
-</ul>
-<p>那我们看一下<code>&lt;context:component-scan&gt;</code>的解析器<code>ComponentScanBeanDefinitionParser</code>的源码 (<code>ComponentScanBeanDefinitionParser</code>继承自<code>BeanDefinitionParser</code>) spring解析<code>&lt;context:component-scan&gt;</code>的时候会调用<code>ComponentScanBeanDefinitionParser</code>的<code>parse()</code>函数 </p>
+<pre><code>public void init() {
+    registerBeanDefinitionParser(&quot;property-placeholder&quot;, new PropertyPlaceholderBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;property-override&quot;, new PropertyOverrideBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;annotation-config&quot;, new AnnotationConfigBeanDefinitionParser());
+
+    registerBeanDefinitionParser(&quot;component-scan&quot;, new ComponentScanBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;load-time-weaver&quot;, new LoadTimeWeaverBeanDefinitionParser());
+
+    registerBeanDefinitionParser(&quot;spring-configured&quot;, new SpringConfiguredBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;mbean-export&quot;, new MBeanExportBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;mbean-server&quot;, new MBeanServerBeanDefinitionParser());
+}
+</code></pre><p>那我们看一下<code>&lt;context:component-scan&gt;</code>的解析器<code>ComponentScanBeanDefinitionParser</code>的源码 (<code>ComponentScanBeanDefinitionParser</code>继承自<code>BeanDefinitionParser</code>) spring解析<code>&lt;context:component-scan&gt;</code>的时候会调用<code>ComponentScanBeanDefinitionParser</code>的<code>parse()</code>函数 </p>
 <pre><code>//element 代表的是完整的&lt;context:component-scan&gt;标签
 //parserContext 解析的上下文环境 能拿到一些诸如readerContext registry等变量
 public BeanDefinition parse(Element element, ParserContext parserContext) {
