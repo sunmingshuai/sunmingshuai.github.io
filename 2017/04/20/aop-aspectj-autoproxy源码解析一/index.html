@@ -5,7 +5,7 @@
 <blockquote>
 <p>并没有介绍过BPP相关内容 这里简单的讲解下 读者心里有个概念就行 等有时间补写Bean的加载与读取的时候 会好好介绍这个重要的类!<br>首先 spring在一些特殊的位置插入了一些处理代码(可能有些读者觉得这句话很<em>眩</em> 不太好理解 我换种表达方式:从加载配置文件到转换成对应的定义类 比如BeanDefinition 再到获取bean 这一整个过程都是spring在做的 他当然能够在任意想插的位置插入代码了) 例如在实例化前后 或者在初始化前后调的方法 这些类一般是BeanPostProcessor的子类 简称BPP</p>
 </blockquote>
-<h3 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h3><p>对于aop这样的非标准或者称为自定义命名空间的元素 spring会从spring.handlersspring.handlers文件中的对应关系找到相应的处理类 然后注册一些处理器 aop命名空间的处理类是<code>AopNamespaceHandler</code> 我们看一下他的<code>init()</code>方法</p>
+<h3 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h3><p>对于aop这样的非标准或者称为自定义命名空间的元素 spring会从spring.handlersspring.handlers文件中的对应关系找到相应的处理类 然后通过<code>init()</code>方法注册一些处理器 aop命名空间的处理类是<code>AopNamespaceHandler</code> 我们看一下他的<code>init()</code>方法</p>
 <pre><code>public void init() {
     // In 2.0 XSD as well as in 2.1 XSD.
     registerBeanDefinitionParser(&quot;config&quot;, new ConfigBeanDefinitionParser());
