@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="baidu-site-verification" content="DYSF5GG91T"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="分享高质量Tomcat Spring SpringMCV AMQ 高并发相关技术博客"><meta name="keywords" content="Tomcat, Spring, AMQ"><title>aop:aspectj-autoproxy源码解析一:注册BPP | 愿你出走半生 归来仍是少年</title><link rel="stylesheet" type="text/css" href="//fonts.css.network/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.3.0"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=1.3.0"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">aop:aspectj-autoproxy源码解析一:注册BPP</h1><a id="logo" href="/.">愿你出走半生 归来仍是少年</a><p class="description">总有一代人 背井离乡</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">aop:aspectj-autoproxy源码解析一:注册BPP</h1><div class="post-meta">Apr 20, 2017<script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><div class="post-content"><blockquote>
+<p>本文为博主原创文章，未经博主允许不得转载。</p>
+</blockquote>
+<h3 id="本文目的"><a href="#本文目的" class="headerlink" title="本文目的"></a>本文目的</h3><p>如题,标签<code>&lt;aop:aspectj-autoproxy proxy-target-class=&quot;true&quot; expose-proxy=&quot;true&quot;/&gt;</code>注册BPP(AspectJAutoProxyBeanDefinitionParser)源码分析</p>
+<blockquote>
+<p>并没有介绍过BPP相关内容 这里简单的讲解下 读者心里有个概念就行 等有时间补写Bean的加载与读取的时候 会好好介绍这个重要的类!<br>首先 spring在一些特殊的位置插入了一些处理代码(可能有些读者觉得这句话很<em>眩</em> 不太好理解 我换种表达方式:从加载配置文件到转换成对应的定义类 比如BeanDefinition 再到获取bean 这一整个过程都是spring在做的 他当然能够在任意想插的位置插入代码了) 例如在实例化前后 或者在初始化前后调的方法 这些类一般是BeanPostProcessor的子类 简称BPP</p>
+</blockquote>
+<h3 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h3><p>对于aop这样的非标准或者称为自定义命名空间的元素 spring会从spring.handlersspring.handlers文件中的对应关系找到相应的处理类 然后注册一些处理器 aop命名空间的处理类是<code>AopNamespaceHandler</code> 我们看一下他的<code>init()</code>方法</p>
+<pre><code>public void init() {
+    // In 2.0 XSD as well as in 2.1 XSD.
+    registerBeanDefinitionParser(&quot;config&quot;, new ConfigBeanDefinitionParser());
+    //
+    registerBeanDefinitionParser(&quot;aspectj-autoproxy&quot;, new AspectJAutoProxyBeanDefinitionParser());
+    registerBeanDefinitionDecorator(&quot;scoped-proxy&quot;, new ScopedProxyBeanDefinitionDecorator());
+
+    // Only in 2.0 XSD: moved to context namespace as of 2.1
+    registerBeanDefinitionParser(&quot;spring-configured&quot;, new SpringConfiguredBeanDefinitionParser());
+}
+</code></pre><p>从上面注册的处理器的关系我们知道 <code>&lt;aop:aspectj-autoproxy&gt;</code>标签的处理器是<code>AspectJAutoProxyBeanDefinitionParser</code> 同样 这是一个继承于<code>BeanDefinitionParser</code>的标准的解析器 我们看一下他的<code>parse()</code>方法</p>
+<pre><code>public BeanDefinition parse(Element element, ParserContext parserContext) {
+    //注册BPP(AnnotationAwareAspectJAutoProxyCreator)
+    AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(parserContext, element);
+    // 如果有子元素的话 设置属性
+    extendBeanDefinition(element, parserContext);
+    return null;
+}
+</code></pre><p><code>parse()</code>方法可以说主要做了一件事情就是注册了一个BPP(BeanPostProcessor) 供后续使用</p>
+<blockquote>
+<p>有些人看到这里可能就蒙圈了 这什么东西 名字这么长 看到后面的时候又会说这是什么东西  类的名字这么长 然后就会觉得好难 主要是读者阅读代码不多的原因 如果阅读的多了 你就会形成一个感觉：不管这个类名字多奇怪 名字多长 不过是一些基本类型(map list等)的包装而已 为了完成某一个功能所做的封装而已</p>
+</blockquote>
+<pre><code>//spring中的方法一般都比较清晰 短短的几行代码告诉了你这个方法要做什么事情
+public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(
+        ParserContext parserContext, Element sourceElement) {
+    //注册BPP(AnnotationAwareAspectJAutoProxyCreator)
+    BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
+            parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+    //根据xml配置 设置AnnotationAwareAspectJAutoProxyCreator的proxyTargetClass exposeProxy属性
+    useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+    //注册组件bean 并暴露给外部
+    registerComponentIfNecessary(beanDefinition, parserContext);
+}
+</code></pre><p>不断的追踪<code>registerAspectJAnnotationAutoProxyCreatorIfNecessary()</code>方法发现 就是注册了个BPP(<code>AspectJAutoProxyBeanDefinitionParser</code>) 不再贴出相关代码 我们看下<code>useClassProxyingIfNecessary()</code>方法</p>
+<pre><code>    //处理proxy-target-class 以及 expose-proxy属性
+    private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, Element sourceElement) {
+    if (sourceElement != null) {
+        //proxy-target-class true:强制使用CGLIB代理 推荐使用
+        boolean proxyTargetClass = Boolean.valueOf(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));
+        if (proxyTargetClass) {
+            AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
+        }
+        //expose-proxy true:暴露代理类 解决某些情况下 代理无法完成的情况
+        boolean exposeProxy = Boolean.valueOf(sourceElement.getAttribute(EXPOSE_PROXY_ATTRIBUTE));
+        if (exposeProxy) {
+            AopConfigUtils.forceAutoProxyCreatorToExposeProxy(registry);
+        }
+    }
+}
+</code></pre><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>似乎<code>&lt;aop:aspectj-autoproxy&gt;</code>标签做的事情并不多 只是注册了一个BPP 但是这个BPP确实非常重要的! 我们用到的切面编程就依靠这个BPP去驱动实现  后面的文章会介绍这个BPP的源码是怎么实现AOP的</p>
+</div><div class="tags"></div><div class="post-nav"><a href="/2017/04/17/component-scan做了些什么/" class="pre">component-scan做了些什么|源码解读</a><a href="/2017/04/20/aop-aspectj-autoproxy源码解析一-注册BPP/" class="next">aop:aspectj-autoproxy源码解析一:注册BPP</a></div><div id="comments"><div id="uyan_frame"></div><script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2131150"></script></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="widget"><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="请输入关键字..."/></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Spring源码分析/">Spring源码分析</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat源码分析/">Tomcat源码分析</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/书单/">书单</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/杂七杂八/">杂七杂八</a><span class="category-list-count">4</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"></div></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/04/20/aop-aspectj-autoproxy源码解析一-注册BPP/">aop:aspectj-autoproxy源码解析一:注册BPP</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/20/aop-aspectj-autoproxy源码解析一/">aop:aspectj-autoproxy源码解析一:注册BPP</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/17/component-scan做了些什么/">component-scan做了些什么|源码解读</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/Tomcat源码分析环境搭建/">Tomcat源码分析环境搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/2017阅读书单/">2017阅读书单(持续更新)</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/Spring源码环境搭建/">Spring源码分析环境搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/当我谈源码时-我谈些什么/">当我谈源码时,我谈些什么</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/14/Unknown-system-variable-storage-engine-解决办法/">Unknown system variable 'storage_engine'解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/14/mac安装sequelpro/">mac安装sequelpro</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/14/nginx反向代理解决mac上tomcat80端口问题/">nginx反向代理解决mac上tomcat80端口问题</a></li></ul></div></div></div></div><a id="totop" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.3.0" async></script><div id="footer"><div class="footer-info"><p><a href="/baidusitemap.xml">网站地图</a> |<a href="/atom.xml">订阅本站</a> |<span>联系博主：<a href="mailto:1106505519@qq.com" target="_blank" class="fa fa-email"> </a><a href="http://weibo.com/xiaoshuai1127" target="_blank" class="fa fa-weibo"></a><a href="https://github.com/sunmingshuai" target="_blank" class="fa fa-github"> </a></span></p><p><span> Copyright &copy;<a href="/." rel="nofollow">孙明帅</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span><span><a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> Theme </a>by<a rel="nofollow" target="_blank" href="https://github.com/chaooo"> Charles.</a></span></p></div></div></div><script type="text/javascript" src="/js/search.json.js?v=1.3.0"></script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?f60abd53b51d8a850b4eceb46491e049";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();</script></body></html>
