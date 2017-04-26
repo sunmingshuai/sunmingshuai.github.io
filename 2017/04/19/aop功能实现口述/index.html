@@ -2,7 +2,7 @@
 <p>为了让大家能阅读下面几篇关于<code>aop</code>的文章更顺利些 这里先给读者讲一下 <code>spring</code>实现<code>aop</code>大概的流程以及涉及到的一些名词 因为注解形式的友好性 大家用的比较多 所以我们只谈这种形式的实现</p>
 <p>aop</p>
 <blockquote>
-<p>面向切面编程 可以这样理解 我们之前所做的所有功能大体来说都是线性的(好比在流淌在水管里的水 一直是往前流动的  很难纵向扩展) 如果我们想加一些公共的服务 比如说日志 登录检查等 OOP将会有大量的重复代码</p>
+<p>面向切面编程(AOP) :面向对象编程(OOP)的一种扩展 可以这样理解 我们之前所做的所有功能大体来说都是线性的(好比在流淌在水管里的水 一直是往前流动的  很难纵向扩展) 如果我们想加一些公共的服务 比如说日志 登录检查等 OOP将会有大量的重复代码</p>
 </blockquote>
 <p>pointcut</p>
 <blockquote>
@@ -22,7 +22,7 @@
 <li><code>spring</code>提前加载非懒惰的<code>bean</code>的过程</li>
 </ul>
 <p>很显然 <code>aop</code>的实现就是在第二个阶段 <code>bean</code>有几个比较特殊的阶段 比如实例化(<code>instantiate</code>) 初始化(<code>initiate</code>) 那么就可以在这几个特殊阶段的前后加一些方法 实现扩展</p>
-<p><code>spring</code>在<code>bean</code>初始化完成后 </p>
+<p><code>spring</code>在<code>bean</code>初始化完成后的时机 完成了</p>
 <ul>
 <li>找出所有切面类的切面方法</li>
 <li>未完  </li>
