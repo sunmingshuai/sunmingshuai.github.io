@@ -238,7 +238,7 @@ body {
 #header {
   text-align: left;
   position: relative;
-  min-height: 300px;
+  min-height: 222px;
 }
 #header .site-name {
   padding-top: 100px;
