@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="baidu-site-verification" content="DYSF5GG91T"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="分享高质量Tomcat Spring SpringMCV Kafka 高并发相关技术博客"><meta name="keywords" content="Tomcat, Spring, AMQ"><title>component-scan做了些什么|源码解读 | The Fourty Thieves</title><link rel="stylesheet" type="text/css" href="//fonts.css.network/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.3.0"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=1.3.0"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">component-scan做了些什么|源码解读</h1><a id="logo" href="/.">The Fourty Thieves</a><p class="description">   Day After Day Nothing Changed, Util One Day......</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">component-scan做了些什么|源码解读</h1><div class="post-meta">Apr 17, 2017<span> | </span><span class="category"><a href="/categories/Spring源码分析/">Spring源码分析</a></span><script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><div class="post-content"><h2 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a><strong>写在前面</strong></h2><p>看spring代码中途的过程中才开始写博客的 所以这篇博客假设你看过spring读取配置文件 解析标准<code>&lt;bean&gt;</code>标签的功能 以后会把这部分内容补上</p>
+<h2 id="本文目的"><a href="#本文目的" class="headerlink" title="本文目的"></a><strong>本文目的</strong></h2><p>本文主要解决一个问题就是component-scan会扫描注册哪些注解标注的类 被@Controller标注的类会被扫描注册吗?</p>
+<h2 id="正文"><a href="#正文" class="headerlink" title="正文"></a><strong>正文</strong></h2><p>当遇到component-scan这样非标准或者称为自定义的元素标签时 spring会通过spring.handlers文件中的对应关系<br><code>http\://www.springframework.org/schema/context=   
+org.springframework.context.config.ContextNamespaceHandler</code><br>找到<code>ContextNamespaceHandler</code> 通过<code>ContextNamespaceHandler</code>类<code>init()</code>方法自动注册一些解析器 下面列出了所有以context为命名空间的组合  例如常见的<code>&lt;context:componet-scan&gt;</code>元素 根据注册对应关系 知道其对应的解析器为<code>ComponentScanBeanDefinitionParser</code></p>
+<pre><code>public void init() {
+    registerBeanDefinitionParser(&quot;property-placeholder&quot;, new PropertyPlaceholderBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;property-override&quot;, new PropertyOverrideBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;annotation-config&quot;, new AnnotationConfigBeanDefinitionParser());
+
+    registerBeanDefinitionParser(&quot;component-scan&quot;, new ComponentScanBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;load-time-weaver&quot;, new LoadTimeWeaverBeanDefinitionParser());
+
+    registerBeanDefinitionParser(&quot;spring-configured&quot;, new SpringConfiguredBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;mbean-export&quot;, new MBeanExportBeanDefinitionParser());
+    registerBeanDefinitionParser(&quot;mbean-server&quot;, new MBeanServerBeanDefinitionParser());
+}
+</code></pre><p>那我们看一下<code>&lt;context:component-scan&gt;</code>的解析器<code>ComponentScanBeanDefinitionParser</code>的源码 (<code>ComponentScanBeanDefinitionParser</code>继承自<code>BeanDefinitionParser</code>) spring解析<code>&lt;context:component-scan&gt;</code>的时候会调用<code>ComponentScanBeanDefinitionParser</code>的<code>parse()</code>函数 </p>
+<pre><code>//element 代表的是完整的&lt;context:component-scan&gt;标签
+//parserContext 解析的上下文环境 能拿到一些诸如readerContext registry等变量
+public BeanDefinition parse(Element element, ParserContext parserContext) {
+    //将指定base-package拆分成string数组的形式
+    String[] basePackages = StringUtils.tokenizeToStringArray(element.getAttribute(BASE_PACKAGE_ATTRIBUTE),
+            ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
+    // 根据xml配置或者默认配置(如果没有指定的话)配置扫描器ClassPathBeanDefinitionScanner
+    ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
+    //scanner扫描包下面含有特殊注解标注的类 
+    //@Component @Named @ManagedBean (@Controller @Service @Repository @Configuration)都会被注册 
+    Set&lt;BeanDefinitionHolder&gt; beanDefinitions = scanner.doScan(basePackages);
+    // 注册组件以及一些我们常见的注解处理器(BPP) 如@Resouce @Autowired @Configuration @Value @Required @PostConstruct
+    //那么以后看到属性注入(IOC/DI)的时候 就不会奇怪 这些注解的处理器(BPP)是在哪里注册的了 在这里!
+    registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
+    return null;
+}
+</code></pre><p>看一下scanner的创建以及设置</p>
+<pre><code>    protected ClassPathBeanDefinitionScanner configureScanner(ParserContext parserContext, Element element) {
+    XmlReaderContext readerContext = parserContext.getReaderContext();
+    boolean useDefaultFilters = true;
+    if (element.hasAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE)) {
+        useDefaultFilters = Boolean.valueOf(element.getAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE));
+    }
+    // 生成scanner的时候 在其父类构造函数中调用了`registerDefaultFilters()`方法中加入了3个注解类型的typeFilter 分别是@Component 
+    // @ManagedBean @Named 意思也就是看类上面有没有这三个注解或者注解的元注解中是否含有这三个注解之一
+    // 这里虽然没有加入如@Service的注解 但看@Service的定义会发现@Service注解也被@Component给标注了
+    ClassPathBeanDefinitionScanner scanner = createScanner(readerContext, useDefaultFilters);
+    scanner.setResourceLoader(readerContext.getResourceLoader());
+    scanner.setEnvironment(parserContext.getDelegate().getEnvironment());
+    // 利用spring 启动的时候根据xml文件或者默认配置(如果没有指定的话)生成的BeanDefinition规则
+    scanner.setBeanDefinitionDefaults(parserContext.getDelegate().getBeanDefinitionDefaults());
+    scanner.setAutowireCandidatePatterns(parserContext.getDelegate().getAutowireCandidatePatterns());
+
+    if (element.hasAttribute(RESOURCE_PATTERN_ATTRIBUTE)) {
+        scanner.setResourcePattern(element.getAttribute(RESOURCE_PATTERN_ATTRIBUTE));
+    }
+
+    try {
+        // 扫描注解定义的bean 需要定义一种beanName的生成规则  一般是驼峰命名法
+        parseBeanNameGenerator(element, scanner);
+    }
+    catch (Exception ex) {
+        readerContext.error(ex.getMessage(), readerContext.extractSource(element), ex.getCause());
+    }
+
+    try {
+    // bean的scope singleton?prototype?
+        parseScope(element, scanner);
+    }
+    catch (Exception ex) {
+        readerContext.error(ex.getMessage(), readerContext.extractSource(element), ex.getCause());
+    }
+    // 根据xml配置生成includeFilter excludeFilter 在创建scanner类的时候 就硬编码进去了3个注解类型
+    // 的typeFilter到includeFilter里面
+    // 类必须满足以下条件才会被注册 因为@Component等是被硬编码进去的 所以只有下面一种情况才会被注册了
+    // 不被excludeFilter匹配 并且被includeFilter匹配
+    parseTypeFilters(element, scanner, readerContext, parserContext);
+    return scanner;
+}
+</code></pre><p>下面在看一下真正的扫描过程<code>doScan</code> 我们发现spirng中真正干活的一般都是以do开头 前面的那么多只是为了做铺垫 <strong>单一指责</strong></p>
+<pre><code>    protected Set&lt;BeanDefinitionHolder&gt; doScan(String... basePackages) {
+    Assert.notEmpty(basePackages, &quot;At least one base package must be specified&quot;);
+    Set&lt;BeanDefinitionHolder&gt; beanDefinitions = new LinkedHashSet&lt;BeanDefinitionHolder&gt;();
+    for (String basePackage : basePackages) {
+        //寻找被@Component或者@Named注解标注的类 或者 类的注解的元注解中含有这两个注解 例如常见的@Respsitory @Controller @Service
+        Set&lt;BeanDefinition&gt; candidates = findCandidateComponents(basePackage);
+        // 对于生成的AnnotatedBeanDefinition做一些转化工作 例如前面说到的应用bd(BeanDefinition)默认配置 
+        // 处理@Primary @Lazy @DependsOn @Role注解等
+        // 转化成BeanDefinitionHolder对象
+        for (BeanDefinition candidate : candidates) {
+            ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
+            candidate.setScope(scopeMetadata.getScopeName());
+            String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
+            if (candidate instanceof AbstractBeanDefinition) {
+                postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
+            }
+            if (candidate instanceof AnnotatedBeanDefinition) {
+                AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
+            }
+            if (checkCandidate(beanName, candidate)) {
+                BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+                definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+                beanDefinitions.add(definitionHolder);
+                //注册到容器中
+                registerBeanDefinition(definitionHolder, this.registry);
+            }
+        }
+    }
+    return beanDefinitions;
+}
+</code></pre><p>看一下<code>findCandidateComponents</code>方法</p>
+<pre><code>public Set&lt;BeanDefinition&gt; findCandidateComponents(String basePackage) {
+    Set&lt;BeanDefinition&gt; candidates = new LinkedHashSet&lt;BeanDefinition&gt;();
+    try {
+        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
+                resolveBasePackage(basePackage) + &quot;/&quot; + this.resourcePattern;
+        //这里的resouces代表的就是路径下的各个类了
+        Resource[] resources = this.resourcePatternResolver.getResources(packageSearchPath);
+        boolean traceEnabled = logger.isTraceEnabled();
+        boolean debugEnabled = logger.isDebugEnabled();
+        for (Resource resource : resources) {
+            if (traceEnabled) {
+                logger.trace(&quot;Scanning &quot; + resource);
+            }
+            if (resource.isReadable()) {
+                try {
+// 这一步的作用就是能够不必加载class但能拿到class各种属性 并且这里也不能载入class(有很多是单例模式) 还没到那一步
+// 只是为了做匹配 生成bd而已
+                    MetadataReader metadataReader = this.metadataReaderFactory.getMetadataReader(resource);
+// 根据includeFilters excludeFilters做匹配 因为篇幅的限制 不详谈 有兴趣的可以研究一下typeFilter的实现
+                    if (isCandidateComponent(metadataReader)) {
+                        ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
+                        sbd.setResource(resource);
+                        sbd.setSource(resource);
+                        if (isCandidateComponent(sbd)) {
+                            if (debugEnabled) {
+                                logger.debug(&quot;Identified candidate component class: &quot; + resource);
+                            }
+                            candidates.add(sbd);
+                        }
+                        else {
+                            if (debugEnabled) {
+                                logger.debug(&quot;Ignored because not a concrete top-level class: &quot; + resource);
+                            }
+                        }
+                    }
+                    else {
+                        if (traceEnabled) {
+                            logger.trace(&quot;Ignored because not matching any filter: &quot; + resource);
+                        }
+                    }
+                }
+                catch (Throwable ex) {
+                    throw new BeanDefinitionStoreException(
+                            &quot;Failed to read candidate component class: &quot; + resource, ex);
+                }
+            }
+            else {
+                if (traceEnabled) {
+                    logger.trace(&quot;Ignored because not readable: &quot; + resource);
+                }
+            }
+        }
+    }
+    catch (IOException ex) {
+        throw new BeanDefinitionStoreException(&quot;I/O failure during classpath scanning&quot;, ex);
+    }
+    return candidates;
+}
+</code></pre><p>到这里 我们算是差不多看完了scanner的扫描注册过程 扫描注册过程不过循环base-package路径下面的所有类 看是否有标注特定注解(硬编码)的类 将这些类转化成bd 供我们后续使用 这里要注意的就是这里不能将类实例化<br>我们再回到<code>ComponentScanBeanDefinitionParser</code>的<code>parse()</code>方法  看下<code>registerComponents()</code>方法<br><code>registerComponents()</code>方法中除了组件外 还有一个比较重要的事情 就是注册我们后面属性填充(IOC)需要用到的一些BPP 例如@Resouce @Autowired等</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div></pre></td><td class="code"><pre><div class="line">	protected void registerComponents(</div><div class="line">			XmlReaderContext readerContext, Set&lt;BeanDefinitionHolder&gt; beanDefinitions, Element element) &#123;</div><div class="line"></div><div class="line">		Object source = readerContext.extractSource(element);</div><div class="line">		CompositeComponentDefinition compositeDef = new CompositeComponentDefinition(element.getTagName(), source);</div><div class="line"></div><div class="line">		for (BeanDefinitionHolder beanDefHolder : beanDefinitions) &#123;</div><div class="line">			compositeDef.addNestedComponent(new BeanComponentDefinition(beanDefHolder));</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		// Register annotation config processors, if necessary.</div><div class="line">		// 默认注册</div><div class="line">		boolean annotationConfig = true;</div><div class="line">		if (element.hasAttribute(ANNOTATION_CONFIG_ATTRIBUTE)) &#123;</div><div class="line">			annotationConfig = Boolean.valueOf(element.getAttribute(ANNOTATION_CONFIG_ATTRIBUTE));</div><div class="line">		&#125;</div><div class="line">		if (annotationConfig) &#123;</div><div class="line">		//这里注册我们需要的BPP</div><div class="line">			Set&lt;BeanDefinitionHolder&gt; processorDefinitions =</div><div class="line">					AnnotationConfigUtils.registerAnnotationConfigProcessors(readerContext.getRegistry(), source);</div><div class="line">			for (BeanDefinitionHolder processorDefinition : processorDefinitions) &#123;</div><div class="line">				compositeDef.addNestedComponent(new BeanComponentDefinition(processorDefinition));</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		readerContext.fireComponentRegistered(compositeDef);</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	</div><div class="line">public static Set&lt;BeanDefinitionHolder&gt; registerAnnotationConfigProcessors(</div><div class="line">			BeanDefinitionRegistry registry, Object source) &#123;</div><div class="line"></div><div class="line">		Set&lt;BeanDefinitionHolder&gt; beanDefs = new LinkedHashSet&lt;BeanDefinitionHolder&gt;(4);</div><div class="line"></div><div class="line">		// @Configuration</div><div class="line">		if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) &#123;</div><div class="line">			RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);</div><div class="line">			def.setSource(source);</div><div class="line">			beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		//@Autowired @Value</div><div class="line">		if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) &#123;</div><div class="line">			RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);</div><div class="line">			def.setSource(source);</div><div class="line">			beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		//@Required</div><div class="line">		if (!registry.containsBeanDefinition(REQUIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) &#123;</div><div class="line">			RootBeanDefinition def = new RootBeanDefinition(RequiredAnnotationBeanPostProcessor.class);</div><div class="line">			def.setSource(source);</div><div class="line">			beanDefs.add(registerPostProcessor(registry, def, REQUIRED_ANNOTATION_PROCESSOR_BEAN_NAME));</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		//@PostConsruct @Resouce 等java注解</div><div class="line">		// Check for JSR-250 support, and if present add the CommonAnnotationBeanPostProcessor.</div><div class="line">		if (jsr250Present &amp;&amp; !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSOR_BEAN_NAME)) &#123;</div><div class="line">			RootBeanDefinition def = new RootBeanDefinition(CommonAnnotationBeanPostProcessor.class);</div><div class="line">			def.setSource(source);</div><div class="line">			beanDefs.add(registerPostProcessor(registry, def, COMMON_ANNOTATION_PROCESSOR_BEAN_NAME));</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		//</div><div class="line">		// Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.</div><div class="line">		if (jpaPresent &amp;&amp; !registry.containsBeanDefinition(PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME)) &#123;</div><div class="line">			RootBeanDefinition def = new RootBeanDefinition();</div><div class="line">			try &#123;</div><div class="line">				def.setBeanClass(ClassUtils.forName(PERSISTENCE_ANNOTATION_PROCESSOR_CLASS_NAME,</div><div class="line">						AnnotationConfigUtils.class.getClassLoader()));</div><div class="line">			&#125;</div><div class="line">			catch (ClassNotFoundException ex) &#123;</div><div class="line">				throw new IllegalStateException(</div><div class="line">						&quot;Cannot load optional framework class: &quot; + PERSISTENCE_ANNOTATION_PROCESSOR_CLASS_NAME, ex);</div><div class="line">			&#125;</div><div class="line">			def.setSource(source);</div><div class="line">			beanDefs.add(registerPostProcessor(registry, def, PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME));</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		return beanDefs;</div><div class="line">	&#125;</div></pre></td></tr></table></figure>
+<p>总的来说 component-scan 做了什么事情就比较清晰了 下面做一下总结</p>
+<ul>
+<li>根据配置生成扫描类<code>ClassPathBeanDefinitionScanner</code>  扫描注册包下符合匹配规则的类</li>
+<li>扫描注册被@Controller @Service @Respsitory @Component @Configuration等标注的类 因为@Controller @Service @Respsitory注解的元注解包含@Component 也就是说@Controller @Service @Respsitory本身被@Component标注 而匹配规则中有一条就是元注解包含@Component @Named 或者 @ManagedBean</li>
+<li>注册处理如@Resouce @Autowired @PostConstruct等的BPP</li>
+</ul>
+<p>当然由于篇幅限制 并没有把所有的知识点都讲到 很多也是点到 那些东西需要读者有时间的时候自己跟着代码走一遍了<br>那么又出现一个问题：<br>既然@Controller注解标注的类也被像普通bean一样注册了 那么在web项目中 又是怎么知道哪些是我们需要的Controller类呢?<br>且听下回分析…</p>
+</div><div class="tags"><a href="/tags/component-scan/">component-scan</a></div><div class="post-nav"><a href="/2017/04/16/Tomcat源码分析环境搭建/" class="pre">Tomcat源码分析环境搭建</a><a href="/2017/04/19/aop功能实现口述/" class="next">aop功能实现口述</a></div><div id="comments"><div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div><script src="https://img1.cache.netease.com/f2e/tie/yun/sdk/loader.js"></script><script>(function() {
+  var cloudTieConfig = {url: document.location.href, sourceId: "",productKey: "7e92867159a646e798100b8a60c85579",target: "cloud-tie-wrapper"};
+  var yunManualLoad = true;
+  Tie.loader("aHR0cHM6Ly9hcGkuZ2VudGllLjE2My5jb20vcGMvbGl2ZXNjcmlwdC5odG1s", true);
+  })();
+
+</script></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="widget"><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="请输入关键字..."/></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Spring源码分析/">Spring源码分析</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tomcat源码分析/">Tomcat源码分析</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/书单/">书单</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/杂七杂八/">杂七杂八</a><span class="category-list-count">4</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"><a href="/tags/aop/" style="font-size: 15px;">aop</a> <a href="/tags/component-scan/" style="font-size: 15px;">component-scan</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2017/12/31/Spring问题快问快答/">Spring问题快问快答</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/21/aop源码解析二-寻找Advisor/">aop源码解析二:寻找Advisor</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/20/aop源码解析一/">aop源码解析一:注册BPP</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/19/aop功能实现口述/">aop功能实现口述</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/17/component-scan做了些什么/">component-scan做了些什么|源码解读</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/Tomcat源码分析环境搭建/">Tomcat源码分析环境搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/搭建spring-web项目供debug使用/">搭建spring web项目供debug使用</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/16/2017阅读书单/">2017阅读书单(持续更新)</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/Spring源码环境搭建/">Spring源码分析环境搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2017/04/15/当我谈源码时-我谈些什么/">当我谈源码时,我谈些什么</a></li></ul></div></div></div></div><a id="totop" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.3.0" async></script><div id="footer"><div class="footer-info"><p><a href="/baidusitemap.xml">网站地图</a> |<a href="/atom.xml">订阅本站</a> |<span>联系博主：<a href="mailto:1106505519@qq.com" target="_blank" class="fa fa-email"> </a><a href="http://weibo.com/xiaoshuai1127" target="_blank" class="fa fa-weibo"></a><a href="https://github.com/sunmingshuai" target="_blank" class="fa fa-github"> </a></span></p><p><span> Copyright &copy;<a href="/." rel="nofollow">孙明帅</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span><span><a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> Theme </a>by<a rel="nofollow" target="_blank" href="https://github.com/chaooo"> Charles.</a></span></p></div></div></div><script type="text/javascript" src="/js/search.json.js?v=1.3.0"></script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?f60abd53b51d8a850b4eceb46491e049";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();</script></body></html>
