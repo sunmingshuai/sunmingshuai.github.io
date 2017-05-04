@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://yoursite.com/2017/04/17/component-scan%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E4%B9%88/</loc>
+    
+    <lastmod>2017-05-04T10:03:40.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://yoursite.com/2017/04/14/nginx%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E8%A7%A3%E5%86%B3mac%E4%B8%8Atomcat80%E7%AB%AF%E5%8F%A3%E9%97%AE%E9%A2%98/</loc>
     
     <lastmod>2017-04-27T07:35:13.000Z</lastmod>
@@ -19,13 +26,6 @@
     <loc>http://yoursite.com/2017/04/19/aop%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E5%8F%A3%E8%BF%B0/</loc>
     
     <lastmod>2017-04-24T10:27:09.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://yoursite.com/2017/04/17/component-scan%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E4%B9%88/</loc>
-    
-    <lastmod>2017-04-24T08:46:39.000Z</lastmod>
     
   </url>
   
