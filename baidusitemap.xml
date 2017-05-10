@@ -4,14 +4,14 @@
 
     
   <url>
-    <loc>http://yoursite.com/2017/04/18/component-scan%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E4%B9%88/</loc>
-    <lastmod>2017-05-10T08:20:40.000Z</lastmod>
+    <loc>http://yoursite.com/2017/05/10/ClassPathXmlApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E4%BA%8C-%E9%BB%98%E8%AE%A4%E7%A9%BA%E9%97%B4%E5%85%83%E7%B4%A0%E8%A7%A3%E6%9E%90/</loc>
+    <lastmod>2017-05-10T10:31:13.000Z</lastmod>
     <data>
         <display>
-        <title>component-scan做了些什么|源码解读</title>
-        <pubTime>2017-04-18T09:35:35.000Z</pubTime>
+        <title>ClassPathXmlApplicationContext源码解析二:默认空间元素解析</title>
+        <pubTime>2017-05-10T01:15:44.000Z</pubTime>
         
-        <tag>component-scan</tag>
+        <tag>context</tag>
          
          
            
@@ -24,14 +24,14 @@
 
     
   <url>
-    <loc>http://yoursite.com/2017/05/10/ClassPathXmlApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E4%BA%8C-%E9%BB%98%E8%AE%A4%E7%A9%BA%E9%97%B4%E5%85%83%E7%B4%A0%E8%A7%A3%E6%9E%90/</loc>
-    <lastmod>2017-05-10T08:14:47.000Z</lastmod>
+    <loc>http://yoursite.com/2017/04/18/component-scan%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E4%B9%88/</loc>
+    <lastmod>2017-05-10T08:20:40.000Z</lastmod>
     <data>
         <display>
-        <title>ClassPathXmlApplicationContext源码解析二:默认空间元素解析</title>
-        <pubTime>2017-05-10T01:15:44.000Z</pubTime>
+        <title>component-scan做了些什么|源码解读</title>
+        <pubTime>2017-04-18T09:35:35.000Z</pubTime>
         
-        <tag>context</tag>
+        <tag>component-scan</tag>
          
          
            
