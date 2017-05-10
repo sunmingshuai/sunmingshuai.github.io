@@ -2,7 +2,7 @@
 <ol>
 <li><p>@Controller与@Component注解有什么不同<br> 文章 <a href="http://www.sunmingshuai.cn/2017/04/17/component-scan%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E4%B9%88/" target="_blank" rel="external">component-scan做了些什么</a> 最后问出的问题<br><code>@Controller</code>注解的作用只是注册普通bean 这是spring团队为了适应mvc所写的一个注解 让人一看就知道这是个控制器 真正起到路由作用的是<code>@RequestMapping</code>注解 spring会根据这个类上面有没有<code>@RequestMapping</code>来最终判定这个类是不是控制器</p>
 </li>
-<li><p>Tomcat中<code>DefaultServlet</code>拦截的路径是<code>/</code> 而spring中<code>DispatcherServlet</code>一般拦截的路径也是<code>/</code> 那为什么最后请求会给<code>DispatcherServlet</code>而不是<code>DefaultServlet</code>呢<br>如果有除了tomcat自带的DefaultServlet外的servlet的拦截路径也是<code>/</code>的话 这个servlet会被设置为默认servlet(defaultServlet) 相当于覆盖了tomcat自带的servlet 对于寻找请求的处理servlet 有专门的一套逻辑去处理</p>
+<li><p>Tomcat中<code>DefaultServlet</code>拦截的路径是<code>/</code> 而spring中<code>DispatcherServlet</code>一般拦截的路径也是<code>/</code> 那为什么最后请求会给<code>DispatcherServlet</code>而不是<code>DefaultServlet</code>呢?<br>如果有除了tomcat自带的DefaultServlet外的servlet的拦截路径也是<code>/</code>的话 这个servlet会被设置为默认servlet(defaultServlet) 相当于覆盖了tomcat自带的servlet 对于寻找请求的处理servlet 有专门的一套逻辑去处理</p>
 </li>
 <li><p>servlet过滤器 spring过滤器有什么不同</p>
 <blockquote>
