@@ -4,6 +4,26 @@
 
     
   <url>
+    <loc>http://yoursite.com/2017/05/11/ClassPathXmlApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E5%9B%9B-%E6%B3%A8%E5%86%8CBPP/</loc>
+    <lastmod>2017-05-11T03:47:05.000Z</lastmod>
+    <data>
+        <display>
+        <title>ClassPathXmlApplicationContext源码解析四:注册BPP</title>
+        <pubTime>2017-05-11T03:38:03.000Z</pubTime>
+        
+        <tag>context</tag>
+         
+         
+           
+             
+              <breadCrumb title="Spring源码分析" url="http://yoursite.com/categories/Spring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>http://yoursite.com/2017/04/29/ClassPathXmlApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E4%B8%89-BFPP/</loc>
     <lastmod>2017-05-11T03:32:05.000Z</lastmod>
     <data>
