@@ -590,6 +590,7 @@ body {
 }
 .post .post-content p {
   margin: 0 0 1.234em;
+  word-break: break-all;
 }
 .post .post-content p code {
   margin: 0 5px;
